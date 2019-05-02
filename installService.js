@@ -1,7 +1,7 @@
 // https://codeload.github.com/multi-geth/multi-geth/zip/v1.8.27 // address of our mgeth
-const { https } = require('follow-redirects');
 const { createWriteStream, existsSync, writeFileSync } = require('fs');
 const { exec } = require('child_process');
+const { https } = require('follow-redirects');
 const yauzl = require("yauzl");
 
 const [,, url] = process.argv;
@@ -23,14 +23,17 @@ function loadService(zipURL, writeStream) {
   );
 }
 
+function writeZipFile(zipURL, func) {
+  const writeStream = createWriteStream(ZIPPED_SERVICE);
+  if (func && typeof func === 'function') func(ZIPPED_SERVICE);
+  return loadService(zipURL, writeStream);  
+}
+
 function downloadService(zipURL) {
   if(existsSync(ZIPPED_SERVICE)) {
-    const writeStream = createWriteStream(ZIPPED_SERVICE);
-    return loadService(zipURL, writeStream);
+    return writeZipFile(zipURL);
   } else {
-    const writeStream = createWriteStream(ZIPPED_SERVICE);
-    writeFileSync(ZIPPED_SERVICE);
-    return loadService(zipURL, writeStream);
+    return writeZipFile(zipURL, writeFileSync);
   }
 }
 
@@ -39,15 +42,11 @@ function unzipService() {
     if (err) throw err;
     zipfile.readEntry();
     zipfile.on('entry', entry => {
-      if (/\/$/.test(entry.fileName)) {
-        zipfile.readEntry();
-      } else {
-        zipfile.openReadStream(entry, (err, readStream) => {
-          if (err) throw err;
-          readStream.on("end", () => zipfile.readEntry());
-          readStream.pipe(createWriteStream(SERVICE_BINARY));
-        });
-      }
+      zipfile.openReadStream(entry, (err, readStream) => {
+        if (err) throw err;
+        readStream.on("end", () => zipfile.readEntry());
+        readStream.pipe(createWriteStream(SERVICE_BINARY));
+      });
     });
     zipfile.on('end', () => exec(`chmod +x ${SERVICE_BINARY} && rm ${SERVICE_BINARY}.zip`));
   });
