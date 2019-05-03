@@ -4,13 +4,14 @@ const SERVICE_NAME = './services/mgeth';
 const MGETH_DATADIR = `--datadir=${process.cwd()}/services/ETC`;
 const SERVICE_FLAGS = ['--rpccorsdomain=*', '--classic', '--rpcport=8545', '--rpc', MGETH_DATADIR]
 
-function startService(serviceName, args) {
+function start(serviceName, args) {
   spawn(serviceName, args, { stdio: 'inherit' });
 }
 
-if (require.main === module) {
-  startService(SERVICE_NAME, SERVICE_FLAGS);
-} else {
-  moodule.exports = startService;
+function startService(name, env){
+  start(SERVICE_NAME, SERVICE_FLAGS);
+  return {port: 8545, host:'localhost'};
 }
+
+module.exports = { startService };
 

@@ -52,11 +52,12 @@ function unzipService() {
   });
 }
 
-if (require.main === module) {
-  downloadService(url).then(() => unzipService());
-} else {
-  module.exports = {
-    downloadService,
-    unzipService,
-  };
+async function installService(name, url) {
+    await downloadService(url)
+    await unzipService()
+    return true
 }
+
+module.exports = {
+    installService
+};
