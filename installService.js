@@ -1,10 +1,13 @@
 // https://codeload.github.com/multi-geth/multi-geth/zip/v1.8.27 // address of our mgeth
 const { createWriteStream, existsSync, writeFileSync } = require('fs');
+const fs = require('fs');
 const { exec } = require('child_process');
-const { https } = require('follow-redirects');
+const { https, http } = require('follow-redirects');
 const yauzl = require("yauzl");
+const {promisify} = require('util');
 
 const [,, url] = process.argv;
+const ZIPPED_SERVICE_DIR = './services'
 const ZIPPED_SERVICE = './services/mgeth.zip';
 const SERVICE_BINARY = './services/mgeth';
 
@@ -14,19 +17,36 @@ const SERVICE_BINARY = './services/mgeth';
  * aren't pre-gereated, need to handle that.
 */
 
+
+//cribbed for sake of demonstration
+var download = promisify(function(url, dest, cb) {
+  var file = createWriteStream(dest);
+  var request = https.get(url, function(response) {
+    response.pipe(file);
+    file.on('finish', function() {
+      file.close(cb);
+    });
+  });
+})
+
 function loadService(zipURL, writeStream) {
-  return new Promise((resolve) =>
+  /*return new Promise((resolve) =>
     https.get(zipURL, response => {
       response.pipe(writeStream);
       response.on('end', () => resolve());
     })
-  );
+  ).then(() => console.log('finished stream'));
+  */
+  fs.mkdirSync(ZIPPED_SERVICE_DIR, { recursive: true });
+  return download(zipURL, ZIPPED_SERVICE)
 }
 
 function writeZipFile(zipURL, func) {
-  const writeStream = createWriteStream(ZIPPED_SERVICE);
-  if (func && typeof func === 'function') func(ZIPPED_SERVICE);
-  return loadService(zipURL, writeStream);  
+ // fs.mkdirSync(ZIPPED_SERVICE_DIR, { recursive: true });
+//  const writeStream = createWriteStream(ZIPPED_SERVICE);
+ // if (func && typeof func === 'function') func(ZIPPED_SERVICE);
+ return loadService(zipURL)
+//  return loadService(zipURL, writeStream);  
 }
 
 function downloadService(zipURL) {
@@ -61,3 +81,4 @@ async function installService(name, url) {
 module.exports = {
     installService
 };
+;
