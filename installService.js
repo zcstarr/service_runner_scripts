@@ -58,6 +58,7 @@ function downloadService(zipURL) {
 }
 
 function unzipService() {
+  return new Promise((resolve, reject)=> {
   yauzl.open(ZIPPED_SERVICE, {lazyEntries: true}, (err, zipfile) => {
     if (err) throw err;
     zipfile.readEntry();
@@ -68,8 +69,14 @@ function unzipService() {
         readStream.pipe(createWriteStream(SERVICE_BINARY));
       });
     });
-    zipfile.on('end', () => exec(`chmod +x ${SERVICE_BINARY} && rm ${SERVICE_BINARY}.zip`));
+    console.log(`chmod +x ${SERVICE_BINARY} && rm ${SERVICE_BINARY}.zip`)
+    zipfile.on('end', () => {
+      exec(`chmod +x ${ZIPPED_SERVICE_DIR}`)
+      exec(`chmod +x ${SERVICE_BINARY} && rm ${SERVICE_BINARY}.zip`)
+      resolve(true)
   });
+  });
+});
 }
 
 async function installService(name, url) {
@@ -80,5 +87,4 @@ async function installService(name, url) {
 
 module.exports = {
     installService
-};
-;
+}
